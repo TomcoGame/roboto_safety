@@ -27,5 +27,6 @@ Every question for the lead lives in the decision register,
 ## Assurance records
 
 The work lives in [`assurance/`](assurance/README.md). AI-authored work is I0: request human verification; never
-mark your own output approved, accept evidence or pass a gate. The modules under `modules/` are upstream snapshots
-from Roboparty; do not change them until the lead has decided how the fork is maintained (decision register DQ-002).
+mark your own output approved, accept evidence or pass a gate. `roboto_safety` is our own pinned fork (DQ-002 A): changes
+under `modules/` are ours to make through reviewed pull requests. Upstream Roboparty changes come in only by a reviewed
+pull request with an impact analysis; never use GitHub's "Sync fork" or pull upstream straight into `main`.

@@ -3,10 +3,10 @@
 | Field | Value |
 |---|---|
 | Work product | WP-M-02 Standards map and integrated humanoid assurance profile |
-| Version | 0.1 (first draft; 2026-10-26) |
+| Version | 0.2 (decision batch 1 applied: industrial work cell (DQ-001 B), EU first with US (DQ-003 A), integrated profile (DQ-004 A), all functional-safety families (DQ-005); 2026-10-26). 0.1 (first draft; 2026-10-26) |
 | Status | Draft, I0 (AI-authored, not verified). Standard editions and draft stages must be checked against the ISO, IEC and EU catalogues before any claim relies on them |
 | Author | Claude (AI assistant) |
-| Decisions it depends on | Intended use and markets; integrated or separate tracks; functional-safety standard family (register DQ-001, DQ-003, DQ-004, DQ-005) |
+| Decisions applied | Industrial work cell alongside workers (DQ-001 B); EU first, US alongside (DQ-003 A); integrated profile (DQ-004 A); all functional-safety families (DQ-005, answered "as many as possible") |
 
 ## 1. The problem
 
@@ -32,6 +32,8 @@ Status as understood on 2026-10-26; **verify each against the publisher before r
 
 ### 2.1 Foundation and regulation
 
+Target markets: the EU first, the US alongside (DQ-003 A).
+
 | Standard / law | Status | Role for RPO |
 |---|---|---|
 | ISO 12100:2010 Machinery: risk assessment and risk reduction | Published | Backbone: hazard identification, risk estimation, the three-step method (inherently safe design, safeguards, information) |
@@ -39,8 +41,13 @@ Status as understood on 2026-10-26; **verify each against the publisher before r
 | EU AI Act (EU) 2024/1689 | In force; obligations for AI that is a safety component of machinery phase in later | ML policy acting as a safety component makes it high-risk AI |
 | EU Cyber Resilience Act (EU) 2024/2847 | Reporting from Sep 2026, full from Dec 2027 | Products with digital elements: secure development, updates, vulnerability handling |
 | IEC 60204-1 Electrical equipment of machines | Published | Stop categories 0, 1 and 2; emergency stop; electrical safety |
+| ANSI/A3 R15.06-2025 (US adoption of ISO 10218:2025), OSHA General Duty Clause | Published | US route for the industrial cell, alongside the EU work |
 
-### 2.2 Robot type standards (which apply depends on intended use, DQ-001)
+### 2.2 Robot type standards
+
+The intended use is an industrial work cell alongside workers (DQ-001 B). **Applies:** ISO 25785-1 (draft),
+ISO 10218-1/-2:2025, ISO 3691-4 / R15.08 for travel within the cell, R15.108 as it appears. **Out of scope:**
+ISO 13482 and UL 3300 (service and consumer use).
 
 | Standard | Status | Role |
 |---|---|---|
@@ -52,6 +59,17 @@ Status as understood on 2026-10-26; **verify each against the publisher before r
 | UL 3300 Service, communication, information, education and entertainment robots | Published | Consumer and commercial robots in North America |
 
 ### 2.3 Functional safety (DQ-005)
+
+The lead's answer was "as many as possible". Applied as: the safety functions are specified once and their evidence
+is mapped to all three families, so the same work shows conformity to each.
+
+- **ISO 13849-1** is the primary route for stops, limits and the envelope, because ISO 10218-1 states its safety
+  function requirements as performance levels (expected PL d, category 3, for most functions in a cell with workers;
+  confirm against the 2025 text).
+- **IEC 62061** gives the equivalent SIL (PL d ≈ SIL 2) for the same functions, from the same analysis.
+- **IEC 61508** applies to the envelope firmware and any safety controller we develop ourselves (systematic
+  capability SC 2 to match).
+- **IEC 61800-5-2** names the drive functions (STO, SS1, SLS, SLP, SLT).
 
 | Standard | Role |
 |---|---|
@@ -82,7 +100,7 @@ Status as understood on 2026-10-26; **verify each against the publisher before r
 
 ## 3. The integrated profile
 
-One lifecycle, one hazard analysis, one safety case. The disciplines differ in **cause** (fault, insufficiency,
+Adopted (DQ-004 A). One lifecycle, one hazard analysis, one safety case. The disciplines differ in **cause** (fault, insufficiency,
 misuse, attack); they share the same hazards (fall, strike, crush, pinch, battery fire) and the same safety
 functions. Running them as separate tracks duplicates the hazard list and leaves gaps at the seams, which is why
 LionDriver merged its HARA and TARA into one HATARA. The profile does the same and adds the humanoid-specific claims.
@@ -95,9 +113,9 @@ LionDriver merged its HARA and TARA into one HATARA. The profile does the same a
 | Sub-claim | Covers | Draws on | LionDriver counterpart |
 |---|---|---|---|
 | **H1 Hazards identified and risk assessed** | One integrated analysis: malfunction, ML insufficiency, foreseeable misuse, attack | ISO 12100, STPA, HATARA method | HARA + TARA → HATARA |
-| **H2 Safety functions meet their integrity** | Joint envelope, stops, speed and force limits, command watchdog | ISO 13849-1 or IEC 62061 / 61508, IEC 61800-5-2 | G1 functional safety |
+| **H2 Safety functions meet their integrity** | Joint envelope, stops, speed and force limits, command watchdog | ISO 13849-1, IEC 62061 and IEC 61508, IEC 61800-5-2 (§2.3) | G1 functional safety |
 | **H3 Stability and fall safety** | Every stop path ends in a defined posture or a managed fall; fall zone kept clear | ISO 25785-1 (draft), IEC 60204-1 stop categories | *new* |
-| **H4 Contact with people stays within limits** | Force, pressure, speed near people; pinch points | ISO 10218-2:2025 body-region limits, ISO 13482 | *new* (driver controllability has no equivalent) |
+| **H4 Contact with people stays within limits** | Force, pressure, speed near people; pinch points | ISO 10218-2:2025 body-region limits | *new* (driver controllability has no equivalent) |
 | **H5 Learned behaviour is bounded and validated** | Policies stay inside the envelope; out-of-distribution detection; sim-to-real validation targets | SOTIF method, ISO/IEC TR 5469, ISO/PAS 8800 concepts, AI Act | G2 SOTIF + G3 AI |
 | **H6 Security does not undermine safety** | Command authentication, update integrity, teleop link | IEC 62443, CRA | G4 cybersecurity |
 | **H7 Competent people, controlled process, independent review** | Plans, change control, reviews, assessor | IEC 61508-1 / ISO 13849-2 management, ASPICE as yardstick | G5 process |
@@ -108,12 +126,13 @@ The envelope pattern carries over from LionDriver: a small element between the M
 limits whatever the policy commands. For RPO it has three layers:
 
 1. **Joint envelope** (H2): per-joint position, velocity and torque limits; command-stream heartbeat; motor enable
-   only in an allowed mode. Location is DQ-007 (adapter firmware, dedicated controller, or software only).
-2. **Stop ladder** (H3): protective stop that keeps balance (category 2) → controlled crouch or sit, then power off
-   (category 1) → power cut with the robot supported (category 0). Which ones exist and what the red button does is
-   DQ-006.
-3. **Operating envelope** (H4, H5): where the robot may be used and how close people may come: gantry or harness,
-   exclusion zone, speed caps. Development-phase rules are DQ-009.
+   only in an allowed mode. Runs in the USB-to-CAN adapter firmware (DQ-007 A); how it reaches PL d for the
+   industrial claim is DQ-012.
+2. **Stop ladder** (H3): two tiers (DQ-006 A). A soft stop crouches with damped joints, then removes power
+   (category 1). The red button cuts power at once (category 0), with the robot supported. A balance-keeping
+   protective stop (category 2) is left for later.
+3. **Operating envelope** (H4, H5): where the robot may be used and how close people may come. During development:
+   gantry or harness for anything untested, 2 m exclusion zone, trained operator on the stop (DQ-009 A).
 
 ### 3.3 How it would become a standard
 

@@ -4,7 +4,7 @@
 |---|---|
 | Work product | Baseline gap assessment |
 | Baseline | `roboto_safety` at `c71fd92` (snapshot of Roboparty `roboto_origin`, sub-repositories under `modules/`) |
-| Version | 0.1 (first review; 2026-10-26) |
+| Version | 0.2 (F-14 resolution recorded, DQ-002 A; 2026-10-26). 0.1 (first review; 2026-10-26) |
 | Status | Draft, I0 (AI-authored, not verified). Human review requested |
 | Author | Claude (AI assistant) |
 
@@ -63,7 +63,7 @@ hazard; ratings come from the hazard analysis (WP-C-03, not yet written).
 | F-11 | **ML policies are unbounded and unmonitored.** Several RL policies (walk, parkour, get-up, motion imitation, interrupt) are selectable at run time. Nothing monitors whether the robot is inside the conditions a policy was trained for | `robots/rpo/configs/*.yaml`; `src/ros_interface.cpp:356-407` | Sim-to-real gap and out-of-distribution behaviour reach the actuators directly |
 | F-12 | **Single-channel compute and adapters.** One Linux SBC; four single-channel adapters each seeing only its own bus. The STM32G431 is not a safety MCU (no lockstep core, no safety manual from the supplier) | `roboto_usb2can/readme.md`; `boards/roboto_usb2can/*.dts` | Limits the safety integrity any claim can reach without added hardware |
 | F-13 | **No requirements, hazard analysis, tests or reviews.** The deployment package has no tests; no safety documentation exists | `modules/roboparty_deploy` (no test directory) | No evidence for any safety claim |
-| F-14 | **Upstream controls the code.** Modules are snapshots of Roboparty repositories, synced daily. Changes made here are overwritten by the next sync unless the fork stops syncing or carries patches | `README.md` "About This Repository"; `RENAME_PLAN.md` | The assured configuration can change without our review |
+| F-14 | **Upstream controls the code.** Modules are snapshots of Roboparty repositories, synced daily. Changes made here are overwritten by the next sync unless the fork stops syncing or carries patches | `README.md` "About This Repository"; `RENAME_PLAN.md` | The assured configuration can change without our review. *Resolved by decision 2026-10-26 (DQ-002 A): own pinned fork, upstream merged only by reviewed PR* |
 
 ### What is already good
 
