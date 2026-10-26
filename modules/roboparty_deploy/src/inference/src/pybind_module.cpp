@@ -16,7 +16,7 @@ PYBIND11_MODULE(robot_py, m) {
              py::arg("kp")  = std::vector<float>{},
              py::arg("kd")  = std::vector<float>{},
              py::arg("tau") = std::vector<float>{})
-        .def("init_motors", &RobotInterface::init_motors)
+        .def("init_motors", &RobotInterface::init_motors, py::arg("apply_can_timeout") = false)
         .def("deinit_motors", &RobotInterface::deinit_motors)
         .def("reset_joints", &RobotInterface::reset_joints, py::arg("joint_default_angle"))
         .def("set_zeros", &RobotInterface::set_zeros)

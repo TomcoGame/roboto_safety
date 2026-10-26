@@ -21,6 +21,7 @@
 #include <queue>
 #include <sstream>
 #include <thread>
+#include <optional>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -239,6 +240,18 @@ class InferenceNode : public rclcpp::Node {
     std::vector<double> action_scale_, clip_cmd_, joint_default_angle_, joint_limits_;
     std::vector<long int> usd2urdf_;
     float gravity_z_upper_;
+    // Velocity commands older than this are replaced by zero (operator link lost).
+    double cmd_timeout_ = 0.5;
+    std::atomic<int64_t> last_cmd_ns_{0};
+    bool cmd_stale_reported_ = false;
+    // Safe stop: inference stops, joints are damped for safe_stop_damp_time_, then the motors are disabled.
+    int max_consecutive_overruns_ = 5;
+    int consecutive_overruns_ = 0;
+    double safe_stop_damp_time_ = 3.0;
+    std::atomic<bool> safe_stop_active_{false};
+    std::atomic<int64_t> safe_stop_deadline_ns_{0};
+    static constexpr std::chrono::milliseconds deinit_confirm_window{1000};
+    std::optional<std::chrono::steady_clock::time_point> last_deinit_press_;
     int last_button0_ = 0, last_button1_ = 0, last_button2_ = 0, last_button3_ = 0, last_button4_ = 0, last_button5_ = 0;
     std::vector<PolicyRuntime> policies_;
     std::vector<int> motion_policy_indices_;
@@ -256,6 +269,11 @@ class InferenceNode : public rclcpp::Node {
     void inference();
     void control();
     void apply_action();
+    void enter_safe_stop(const std::string& reason);
+    bool refuse_during_safe_stop(const std::string& action);
+    void init_motors_clearing_safe_stop();
+    void mark_cmd_received();
+    void clamp_to_joint_limits(std::vector<float>& act) const;
     bool start_joint_reset();
     PolicyRuntime& active_policy();
 

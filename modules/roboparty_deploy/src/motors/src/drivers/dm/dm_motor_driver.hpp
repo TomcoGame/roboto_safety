@@ -112,6 +112,7 @@ class DmMotorDriver : public MotorDriver {
     virtual void reset_motor_id() override {};
     virtual void refresh_motor_status() override;
     virtual void clear_motor_error() override;
+    virtual void set_can_timeout_ms(uint32_t timeout_ms) override;
 
    private:
     uint16_t master_id_;
