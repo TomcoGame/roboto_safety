@@ -1,0 +1,269 @@
+# Decision register: questions that wait on the project lead.
+# Format and lifecycle: README.md in this folder. Checked by check_decisions.py.
+# Ported from LionDriver (assurance/01-management/decisions) on 2026-10-26.
+
+- id: DQ-001
+  question: "What will the robot be used for, and by whom, for the first claim?"
+  context: >-
+    The intended use picks the product standard and how strict everything else is. A lab robot near trained
+    operators can lean on distance and a gantry; a robot among the public or in homes needs force limits, fall
+    protection and much more validation. **Nothing else in the plan can be sized until this is set.**
+  reversibility: revisit
+  blocks: "Choice of product standard (ISO 25785-1 / 10218 / 13482 / UL 3300), hazard analysis scope, every later gate"
+  gate: G0
+  asked: 2026-10-26
+  batch: 1
+  options:
+    - key: A
+      recommended: true
+      title: "Lab and research, trained operators only"
+      detail: "Indoors, exclusion zone, gantry for untested behaviour. Follows ISO 25785-1 draft and ISO 12100. Smallest first claim; widen later."
+    - key: B
+      title: "Industrial work cell alongside workers"
+      detail: "ISO 10218:2025 and ISO 25785-1. Needs certified-grade stops and contact limits. Much more hardware and test."
+    - key: C
+      title: "Service or home use among untrained people"
+      detail: "ISO 13482, UL 3300. Hardest: falls near people, children, pets. Not reachable on current hardware."
+  sources: ["assurance/01-management/WP-M-01-assurance-strategy.md §3", "assurance/01-management/WP-M-02-standards-map.md §2.2"]
+  status: open
+
+- id: DQ-002
+  question: "Do we assure Roboparty's RPO as published, or our own fork that we change?"
+  context: >-
+    The modules here are daily snapshots of Roboparty's repositories. Any safety fix we make (motor timeouts, joint
+    limits, a safety envelope) is overwritten by the next sync unless we stop syncing or carry patches. LionDriver
+    faced the same with comma.ai and chose a pinned fork.
+  reversibility: hard
+  blocks: "Every code change; configuration control; upstream management plan"
+  gate: G0
+  asked: 2026-10-26
+  batch: 1
+  options:
+    - key: A
+      recommended: true
+      title: "Our own fork, pinned; upstream merged only after review"
+      detail: "We control what is assured. Cost: we merge Roboparty updates by hand and own the divergence."
+    - key: B
+      title: "Assess upstream as-is; offer fixes back to Roboparty"
+      detail: "No divergence. Cost: the assured configuration can change under us; fixes wait on Roboparty."
+    - key: C
+      title: "Documentation only, no code changes"
+      detail: "Write the analysis for the community. Cost: no safety claim for any robot."
+  sources: ["assurance/00-assessment/gap-assessment.md F-14", "README.md About This Repository"]
+  status: open
+
+- id: DQ-003
+  question: "Which markets' rules do we design to first?"
+  context: >-
+    The EU Machinery Regulation applies from 20 January 2027 and is the most demanding written rule for this kind of
+    machine, including learned behaviour and cybersecurity. US practice runs through ANSI/A3 and OSHA. China has its
+    own GB humanoid standards in progress. Designing to the strictest first avoids redoing work.
+  reversibility: revisit
+  blocks: "Standards list in WP-M-02; whether the AI Act and Cyber Resilience Act apply"
+  gate: G0
+  asked: 2026-10-26
+  batch: 1
+  options:
+    - key: A
+      recommended: true
+      title: "EU first, US alongside"
+      detail: "Machinery Regulation, AI Act, CRA, plus ANSI/A3 equivalents. Covers most others. Cost: the heaviest paperwork."
+    - key: B
+      title: "US only"
+      detail: "ANSI/A3, UL 3300, OSHA general duty. Lighter now; EU later means rework."
+    - key: C
+      title: "No market target yet; standards only"
+      detail: "Follow ISO/IEC without a legal frame. Cheapest; nothing is market-ready."
+  sources: ["assurance/01-management/WP-M-02-standards-map.md §2.1"]
+  status: open
+
+- id: DQ-004
+  question: "Run one integrated analysis across safety, ML and security, or a separate track per standard?"
+  context: >-
+    Falls, strikes and pinches can come from a component fault, a policy that misbehaves, a misused gamepad or an
+    attacker on the network. LionDriver merged its hazard and threat analyses into one (HATARA) to stop the same
+    hazard being analysed four times with gaps between. Assessors are used to separate tracks.
+  reversibility: hard
+  blocks: "Hazard analysis method, safety case structure (claims H1–H7)"
+  gate: G0
+  asked: 2026-10-26
+  batch: 1
+  options:
+    - key: A
+      recommended: true
+      title: "Integrated: one hazard analysis, one safety case"
+      detail: "Reuses LionDriver's HATARA method and Living Safety Case. Each standard gets a mapping table. Cost: assessors must read across."
+    - key: B
+      title: "Separate tracks per standard"
+      detail: "Familiar to assessors. Cost: duplicated work; hazards at the seams (an attack that causes a fall) fall between tracks."
+  sources: ["assurance/01-management/WP-M-02-standards-map.md §3"]
+  status: open
+
+- id: DQ-005
+  question: "Which functional-safety standard family should the safety functions follow?"
+  context: >-
+    The joint envelope and stops need an integrity level. ISO 13849-1 (performance levels) is the usual machinery
+    route and simplest for stops and limits. IEC 62061 / IEC 61508 (SIL) suit complex programmable electronics such as
+    a safety controller written from scratch. Both use IEC 61800-5-2 names for drive functions (safe torque off, safe
+    speed and so on).
+  reversibility: revisit
+  blocks: "Safety requirements, hardware choice for the envelope"
+  gate: G1
+  asked: 2026-10-26
+  batch: 1
+  after: [DQ-001]
+  options:
+    - key: A
+      recommended: true
+      title: "ISO 13849-1 with IEC 61800-5-2 functions"
+      detail: "Machinery norm; categories and PL fit stops and limits. Cost: weaker guidance for the ML-adjacent software."
+    - key: B
+      title: "IEC 62061 / IEC 61508 SIL"
+      detail: "Better for a custom safety controller. Cost: heavier process and documentation."
+  sources: ["assurance/01-management/WP-M-02-standards-map.md §2.3"]
+  status: open
+
+- id: DQ-006
+  question: "What should pressing stop do on a robot that falls without power?"
+  context: >-
+    Today the only stop is a switch that cuts the 48 V supply, so a standing robot collapses where it is. That is
+    acceptable on a gantry and not acceptable near people. A controlled stop lowers the robot first, but needs the
+    software and motors to be working, so it cannot be the only stop.
+  reversibility: revisit
+  blocks: "Stop ladder in the safety concept (H3); operating rules (DQ-009)"
+  gate: G1
+  asked: 2026-10-26
+  batch: 1
+  figure: figures/dq-006.svg
+  caption: "What each option does when a stop is pressed."
+  options:
+    - key: A
+      recommended: true
+      title: "Two tiers: soft stop lowers the robot, red button cuts power"
+      detail: "Soft stop: crouch with damped joints, then power off. Red button stays the last resort, used with a gantry or harness. Cost: firmware and a second button."
+    - key: B
+      title: "Keep power cut only"
+      detail: "No work. Cost: every stop is a fall; the robot must always be supported."
+    - key: C
+      title: "Controlled stop only"
+      detail: "No falls in normal stops. Cost: no stop at all when the SBC or a motor fails. Not recommended."
+  sources: ["assurance/00-assessment/gap-assessment.md F-07 F-08 F-09", "assurance/01-management/WP-M-02-standards-map.md §3.2"]
+  status: open
+
+- id: DQ-007
+  question: "Where should the joint safety envelope run?"
+  context: >-
+    Something has to enforce joint limits and stop the robot when the policy or the Linux board misbehaves. Today
+    nothing does. The USB-to-CAN adapters already sit between the board and every motor and run small open firmware;
+    a dedicated controller is stronger but is new hardware.
+  reversibility: revisit
+  blocks: "Safety concept, envelope requirements, hardware budget"
+  gate: G1
+  asked: 2026-10-26
+  batch: 1
+  figure: figures/dq-007.svg
+  caption: "The command chain and the three places the envelope could run."
+  options:
+    - key: A
+      recommended: true
+      title: "In the USB-to-CAN adapter firmware"
+      detail: "Limits, heartbeat timeout and damped state on every bus. No new hardware. Cost: each adapter sees one bus; STM32G431 is not a safety MCU, so integrity is capped."
+    - key: B
+      title: "A dedicated safety controller"
+      detail: "Watches all buses and the IMU, switches motor power. Highest integrity. Cost: a new board, design time and money."
+    - key: C
+      title: "Software supervisor on the Linux board"
+      detail: "Fastest to build. Cost: fails with the board it guards; earns no safety credit."
+  sources: ["assurance/00-assessment/gap-assessment.md F-01 F-12", "assurance/01-management/WP-M-01-assurance-strategy.md §4"]
+  status: open
+
+- id: DQ-008
+  question: "Which robot configuration should the first claim cover?"
+  context: >-
+    RPO ships seven policies, teleoperation and navigation. Assuring all of them at once multiplies the analysis.
+    LionDriver claimed one car first and adds others through an impact analysis.
+  reversibility: easy
+  blocks: "Item definition, hazard analysis scope"
+  gate: G0
+  asked: 2026-10-26
+  batch: 1
+  options:
+    - key: A
+      recommended: true
+      title: "RPO V2.0, RDK X5, DM motors, default walking policy, gamepad"
+      detail: "One policy, one input. Others join later by impact analysis. Cost: parkour, get-up, teleop not covered yet."
+    - key: B
+      title: "Walking plus get-up"
+      detail: "Get-up matters after every fall. Cost: a second policy to analyse and validate from the start."
+    - key: C
+      title: "Everything shipped"
+      detail: "Complete coverage. Cost: several times the work before anything can be claimed."
+  sources: ["assurance/01-management/WP-M-01-assurance-strategy.md §3.1"]
+  status: open
+
+- id: DQ-009
+  question: "What rules apply when the robot runs during development?"
+  context: >-
+    Until the envelope and stop ladder are verified, the robot has no protection beyond the power-cut switch.
+    These rules are what keeps people safe in the meantime, the way LionDriver uses trained safety drivers.
+  reversibility: easy
+  blocks: "Any powered test of a new policy or change"
+  gate: G0
+  asked: 2026-10-26
+  batch: 1
+  options:
+    - key: A
+      recommended: true
+      title: "Gantry or harness for anything untested; 2 m exclusion zone; trained operator on the stop"
+      detail: "Untested policies and every change run supported. Free walking only for a configuration that passed its gantry tests. Cost: a gantry and slower testing."
+    - key: B
+      title: "Exclusion zone only, no gantry"
+      detail: "Faster tests. Cost: every fault ends in a fall and possible damage or a strike."
+    - key: C
+      title: "Gantry always"
+      detail: "Safest. Cost: walking cannot be validated freely."
+  sources: ["assurance/00-assessment/gap-assessment.md F-08", "assurance/01-management/WP-M-01-assurance-strategy.md §3.1"]
+  status: open
+
+- id: DQ-010
+  question: "Will we use an independent reviewer or assessor, and when?"
+  context: >-
+    Everything written so far is AI-authored and unreviewed. Some confirmation must come from someone independent of
+    the author. On LionDriver you chose no assessor for now. A functional-safety reviewer with machinery experience
+    could check the hazard analysis at G1.
+  reversibility: revisit
+  blocks: "Confirmation of G0 and G1; any claim beyond draft"
+  gate: G0
+  asked: 2026-10-26
+  batch: 1
+  options:
+    - key: A
+      recommended: true
+      title: "No assessor yet; one external reviewer at G1"
+      detail: "Review of the hazard analysis and safety concept only. Cost: a few reviewer-days."
+    - key: B
+      title: "Engage an assessor now"
+      detail: "Confirms tailoring early. Cost: the first external spend, before scope is settled."
+    - key: C
+      title: "No external review"
+      detail: "No cost. Cost: nothing can be claimed as reviewed."
+  sources: ["assurance/01-management/WP-M-01-assurance-strategy.md §5"]
+  status: open
+
+- id: DQ-011
+  question: "Write the assurance records as Markdown docs-as-code, as on LionDriver?"
+  context: "Keeps tooling, review and CI identical to LionDriver."
+  reversibility: easy
+  decider: claude
+  blocks: "Record format"
+  gate: G0
+  options:
+    - key: A
+      recommended: true
+      title: "Markdown and YAML in the repository"
+      detail: "Same as LionDriver; reviewable in pull requests."
+    - key: B
+      title: "Separate document tool"
+      detail: "Easier for non-developers. Cost: no CI checks, tooling split."
+  sources: ["LionDriver DQ-118"]
+  status: queued

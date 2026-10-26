@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" role="img" aria-labelledby="dq7t">
+  <title id="dq7t">Command chain from the RL policy on the SBC, through four USB-to-CAN adapters, to 23 joint motors. Option C puts the envelope in software on the SBC; option A puts it in the adapter firmware, on every bus; option B adds a separate safety controller that watches all buses and can remove motor power.</title>
+  <defs><marker id="ah7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--muted,#6e7781)"/></marker></defs>
+  <text x="0" y="16" font-size="12" font-weight="600" letter-spacing=".06em" style="fill:var(--muted,#6e7781)">COMMAND CHAIN TODAY</text>
+  <rect x="0" y="30" width="190" height="70" rx="6" style="fill:var(--surface,#f6f8fa);stroke:var(--line,#d0d7de)"/>
+  <text x="95" y="56" text-anchor="middle" font-size="14" font-weight="600" style="fill:var(--ink,#1f2328)">RDK X5 SBC (Linux)</text>
+  <text x="95" y="76" text-anchor="middle" font-size="12" style="fill:var(--muted,#6e7781)">RL policy → joint targets</text>
+  <text x="95" y="92" text-anchor="middle" font-size="12" style="fill:var(--muted,#6e7781)">QM, ML</text>
+  <path d="M196 65 H236" stroke-width="1.5" marker-end="url(#ah7)" style="stroke:var(--muted,#6e7781)"/>
+  <text x="216" y="58" text-anchor="middle" font-size="11" style="fill:var(--muted,#6e7781)">USB</text>
+  <rect x="242" y="30" width="180" height="70" rx="6" style="fill:var(--surface,#f6f8fa);stroke:var(--line,#d0d7de)"/>
+  <text x="332" y="56" text-anchor="middle" font-size="14" font-weight="600" style="fill:var(--ink,#1f2328)">4 × USB-to-CAN</text>
+  <text x="332" y="76" text-anchor="middle" font-size="12" style="fill:var(--muted,#6e7781)">STM32G431, pass-through</text>
+  <text x="332" y="92" text-anchor="middle" font-size="12" style="fill:var(--muted,#6e7781)">one per bus</text>
+  <path d="M428 65 H468" stroke-width="1.5" marker-end="url(#ah7)" style="stroke:var(--muted,#6e7781)"/>
+  <text x="448" y="58" text-anchor="middle" font-size="11" style="fill:var(--muted,#6e7781)">CAN</text>
+  <rect x="474" y="30" width="166" height="70" rx="6" style="fill:var(--surface,#f6f8fa);stroke:var(--line,#d0d7de)"/>
+  <text x="557" y="56" text-anchor="middle" font-size="14" font-weight="600" style="fill:var(--ink,#1f2328)">23 joint motors</text>
+  <text x="557" y="76" text-anchor="middle" font-size="12" style="fill:var(--muted,#6e7781)">DM, closed firmware</text>
+  <text x="557" y="92" text-anchor="middle" font-size="12" style="fill:var(--muted,#6e7781)">48 V, e-stop cuts power</text>
+
+  <rect x="0" y="122" width="190" height="62" rx="6" style="fill:var(--bad-soft,#ffebe9)"/>
+  <text x="95" y="146" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--bad,#cf222e)">C · software supervisor</text>
+  <text x="95" y="166" text-anchor="middle" font-size="12" style="fill:var(--bad,#cf222e)">fastest; no safety credit,</text>
+  <text x="95" y="180" text-anchor="middle" font-size="12" style="fill:var(--bad,#cf222e)">fails with the SBC</text>
+  <path d="M95 118 V104" stroke-width="1.5" style="stroke:var(--bad,#cf222e)"/>
+
+  <rect x="242" y="122" width="180" height="62" rx="6" style="fill:var(--ok-soft,#dafbe1)"/>
+  <text x="332" y="146" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--ok,#1a7f37)">A · envelope in adapters</text>
+  <text x="332" y="166" text-anchor="middle" font-size="12" style="fill:var(--ok,#1a7f37)">recommended now; no new</text>
+  <text x="332" y="180" text-anchor="middle" font-size="12" style="fill:var(--ok,#1a7f37)">hardware; per-bus view</text>
+  <path d="M332 118 V104" stroke-width="1.5" style="stroke:var(--ok,#1a7f37)"/>
+
+  <rect x="180" y="214" width="280" height="70" rx="6" style="fill:var(--accent-soft,#ddf4ff)"/>
+  <text x="320" y="238" text-anchor="middle" font-size="13" font-weight="700" style="fill:var(--accent,#0969da)">B · dedicated safety controller</text>
+  <text x="320" y="258" text-anchor="middle" font-size="12" style="fill:var(--accent,#0969da)">listens on all 4 buses + IMU; switches motor power</text>
+  <text x="320" y="274" text-anchor="middle" font-size="12" style="fill:var(--accent,#0969da)">highest integrity; new board and money</text>
+  <path d="M460 249 H557 V104" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ah7)" style="stroke:var(--accent,#0969da)"/>
+  <path d="M332 184 V210" stroke-width="1.5" stroke-dasharray="4 3" style="stroke:var(--accent,#0969da)"/>
+</svg>

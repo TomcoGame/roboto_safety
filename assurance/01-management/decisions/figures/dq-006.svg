@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 256" role="img" aria-labelledby="dq6t">
+  <title id="dq6t">What happens when a stop is pressed. Option A, two tiers: a soft stop lowers the robot to a crouch in about two seconds and then removes power, and the red button cuts power at once while the robot is on a gantry. Option B, power cut only: the robot collapses. Option C, controlled stop only: works only while the software and motors work.</title>
+  <defs><marker id="ah6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--muted,#6e7781)"/></marker></defs>
+  <text x="0" y="16" font-size="12" font-weight="600" letter-spacing=".06em" style="fill:var(--muted,#6e7781)">A · TWO TIERS (RECOMMENDED)</text>
+  <rect x="0" y="26" width="130" height="34" rx="6" style="fill:var(--surface,#f6f8fa);stroke:var(--line,#d0d7de)"/>
+  <text x="65" y="48" text-anchor="middle" font-size="12.5" font-weight="600" style="fill:var(--ink,#1f2328)">Soft-stop button</text>
+  <path d="M136 43 H170" stroke-width="1.5" marker-end="url(#ah6)" style="stroke:var(--muted,#6e7781)"/>
+  <rect x="176" y="26" width="200" height="34" rx="6" style="fill:var(--ok-soft,#dafbe1)"/>
+  <text x="276" y="48" text-anchor="middle" font-size="12.5" style="fill:var(--ok,#1a7f37)">crouch, joints damped (~2 s)</text>
+  <path d="M382 43 H416" stroke-width="1.5" marker-end="url(#ah6)" style="stroke:var(--muted,#6e7781)"/>
+  <rect x="422" y="26" width="218" height="34" rx="6" style="fill:var(--ok-soft,#dafbe1)"/>
+  <text x="531" y="48" text-anchor="middle" font-size="12.5" style="fill:var(--ok,#1a7f37)">power off, robot at rest (cat 1)</text>
+  <rect x="0" y="68" width="130" height="34" rx="6" style="fill:var(--surface,#f6f8fa);stroke:var(--line,#d0d7de)"/>
+  <text x="65" y="90" text-anchor="middle" font-size="12.5" font-weight="600" style="fill:var(--ink,#1f2328)">Red button</text>
+  <path d="M136 85 H170" stroke-width="1.5" marker-end="url(#ah6)" style="stroke:var(--muted,#6e7781)"/>
+  <rect x="176" y="68" width="464" height="34" rx="6" style="fill:var(--accent-soft,#ddf4ff)"/>
+  <text x="408" y="90" text-anchor="middle" font-size="12.5" style="fill:var(--accent,#0969da)">power cut at once (cat 0); robot falls into the gantry or harness</text>
+
+  <text x="0" y="134" font-size="12" font-weight="600" letter-spacing=".06em" style="fill:var(--muted,#6e7781)">B · POWER CUT ONLY (TODAY)</text>
+  <rect x="0" y="144" width="130" height="34" rx="6" style="fill:var(--surface,#f6f8fa);stroke:var(--line,#d0d7de)"/>
+  <text x="65" y="166" text-anchor="middle" font-size="12.5" font-weight="600" style="fill:var(--ink,#1f2328)">Red button</text>
+  <path d="M136 161 H170" stroke-width="1.5" marker-end="url(#ah6)" style="stroke:var(--muted,#6e7781)"/>
+  <rect x="176" y="144" width="464" height="34" rx="6" style="fill:var(--bad-soft,#ffebe9)"/>
+  <text x="408" y="166" text-anchor="middle" font-size="12.5" style="fill:var(--bad,#cf222e)">power cut; an unsupported robot collapses where it stands</text>
+
+  <text x="0" y="210" font-size="12" font-weight="600" letter-spacing=".06em" style="fill:var(--muted,#6e7781)">C · CONTROLLED STOP ONLY</text>
+  <rect x="0" y="216" width="130" height="34" rx="6" style="fill:var(--surface,#f6f8fa);stroke:var(--line,#d0d7de)"/>
+  <text x="65" y="238" text-anchor="middle" font-size="12.5" font-weight="600" style="fill:var(--ink,#1f2328)">Stop button</text>
+  <path d="M136 233 H170" stroke-width="1.5" marker-end="url(#ah6)" style="stroke:var(--muted,#6e7781)"/>
+  <rect x="176" y="216" width="464" height="34" rx="6" style="fill:var(--bad-soft,#ffebe9)"/>
+  <text x="408" y="238" text-anchor="middle" font-size="12.5" style="fill:var(--bad,#cf222e)">crouch, then off; no stop at all if the SBC or a motor has failed</text>
+</svg>
