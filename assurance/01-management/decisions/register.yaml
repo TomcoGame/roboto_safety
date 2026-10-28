@@ -324,6 +324,9 @@
     ISO 10218-2:2025 allows several ways to let people near a robot: keep them in separate zones and stop the robot
     when someone enters, slow and stop as people approach (speed and separation monitoring), or limit force so contact
     is harmless (power and force limiting). A walking robot that can fall makes force limiting the hardest of the three.
+    The hazard analysis puts numbers on it: with zone separation every safety function needs PL d; with workers
+    mixing freely around a walking robot, the fall, limb and stop functions need PL e, which this hardware is not
+    expected to reach.
   reversibility: revisit
   blocks: "Hazard analysis scope; sensors to buy; safety requirements for H4"
   gate: G1
@@ -340,7 +343,7 @@
     - key: C
       title: "Power and force limiting"
       detail: "Workers may touch the robot. Cost: a falling robot of this mass can exceed body-region limits; likely not reachable on this hardware."
-  sources: ["assurance/01-management/WP-M-02-standards-map.md §2.2, §3.1 H4"]
+  sources: ["assurance/01-management/WP-M-02-standards-map.md §2.2, §3.1 H4", "assurance/02-concept/WP-C-03-integrated-hazard-analysis.md §5"]
   status: open
 
 - id: DQ-014
@@ -349,6 +352,8 @@
     Both tiers of the stop you chose can end with the robot on the floor: the red button always does, and the soft
     stop does if a motor has failed. Whether a fall into an empty zone counts as a safe outcome sets how big the clear
     zone around the robot must be, and whether a balance-keeping stop is needed before workers come close.
+    The hazard analysis rates a fall onto a nearby worker as serious and unavoidable once it starts (PL d with a
+    clear zone, PL e without), so the answer sets the hardest requirement in the plan.
   reversibility: hard
   blocks: "Safe-state definition (H3); size of the clear zone; whether a category 2 stop is required"
   gate: G1
@@ -365,7 +370,7 @@
     - key: C
       title: "Yes, anywhere"
       detail: "No clear zone. Cost: a person can be struck by a falling robot. Not recommended."
-  sources: ["assurance/01-management/WP-M-02-standards-map.md §1, §4", "DQ-006"]
+  sources: ["assurance/01-management/WP-M-02-standards-map.md §1, §4", "DQ-006", "assurance/02-concept/WP-C-03-integrated-hazard-analysis.md HE-01.1, HE-01.2"]
   status: open
 
 - id: DQ-015

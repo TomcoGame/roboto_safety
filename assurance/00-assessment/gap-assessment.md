@@ -100,7 +100,7 @@ These are low-regret and do not wait on the lead. They become requirements once 
 3. ~~On exception or repeated overrun, go to a defined damped state~~ done (F-04, F-05).
 4. Per-joint limits: position done; velocity and torque limits wait on the safety concept (F-01, F-02).
 5. ~~Make motor disable a two-step action~~ done (F-07).
-6. Characterise what the robot does on power cut, motor timeout, safe stop and SBC freeze, on a gantry, and record it (F-03, F-04, F-08). Needs the gantry (DQ-017).
+6. Characterise what the robot does on power cut, motor timeout, safe stop and SBC freeze, on a gantry, and record it (F-03, F-04, F-08). Procedure written: [WP-V-01](../06-validation/WP-V-01-gantry-test-procedure.md). Needs the gantry (DQ-017).
 
 ## 5. What carries over from LionDriver, and what does not
 
