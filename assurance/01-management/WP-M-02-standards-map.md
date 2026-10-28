@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Work product | WP-M-02 Standards map and integrated humanoid assurance profile |
-| Version | 0.2 (decision batch 1 applied: industrial work cell (DQ-001 B), EU first with US (DQ-003 A), integrated profile (DQ-004 A), all functional-safety families (DQ-005); 2026-10-26). 0.1 (first draft; 2026-10-26) |
+| Version | 0.3 (§3.2 operating envelope: zone separation (DQ-013 A), fall into a clear zone accepted (DQ-014 A), speed limit (DQ-015 A); 2026-10-28). 0.2 (decision batch 1 applied: industrial work cell (DQ-001 B), EU first with US (DQ-003 A), integrated profile (DQ-004 A), all functional-safety families (DQ-005); 2026-10-26). 0.1 (first draft; 2026-10-26) |
 | Status | Draft, I0 (AI-authored, not verified). Standard editions and draft stages must be checked against the ISO, IEC and EU catalogues before any claim relies on them |
 | Author | Claude (AI assistant) |
 | Decisions applied | Industrial work cell alongside workers (DQ-001 B); EU first, US alongside (DQ-003 A); integrated profile (DQ-004 A); all functional-safety families (DQ-005, answered "as many as possible") |
@@ -131,8 +131,11 @@ limits whatever the policy commands. For RPO it has three layers:
 2. **Stop ladder** (H3): two tiers (DQ-006 A). A soft stop crouches with damped joints, then removes power
    (category 1). The red button cuts power at once (category 0), with the robot supported. A balance-keeping
    protective stop (category 2) is left for later.
-3. **Operating envelope** (H4, H5): where the robot may be used and how close people may come. During development:
-   gantry or harness for anything untested, 2 m exclusion zone, trained operator on the stop (DQ-009 A).
+3. **Operating envelope** (H4, H5): where the robot may be used and how close people may come. In the cell:
+   workers and the walking robot in separate zones, the robot stopping when a worker enters its zone (DQ-013 A);
+   a fall acceptable only into a clear fall zone (DQ-014 A); 0.3 m/s with a worker in the cell, 0.6 m/s when empty
+   (DQ-015 A). During development: gantry or harness for anything untested, 2 m exclusion zone, trained operator on
+   the stop (DQ-009 A).
 
 ### 3.3 How it would become a standard
 

@@ -4,11 +4,11 @@
 |---|---|
 | Work product | WP-C-03 Integrated hazard, misuse and threat analysis (H1 of the claim structure) |
 | Standard reference | ISO 12100:2010 §5.4–5.6 (hazard identification, risk estimation); ISO 13849-1:2023 Annex A (required performance level); ISO 10218-2:2025 (contact); ISO 25785-1 draft (stability); ISO/SAE 21434 attack feasibility, used as a method; HATARA interaction types (Kriaa et al.), as on LionDriver |
-| Version | 0.1 (first draft; 2026-10-28) |
+| Version | 0.2 (ratings settled for zone separation (DQ-013 A) and a fall into a clear zone (DQ-014 A); SF-05 defined (DQ-015 A); second channel (DQ-012 A); 2026-10-28). 0.1 (first draft; 2026-10-28) |
 | Status | Draft, I0 (AI-authored, not verified). **Every rating is a proposal** for review |
 | Author | Claude (AI assistant) |
 | Inputs | [WP-C-01 item definition](WP-C-01-item-definition.md); [gap assessment](../00-assessment/gap-assessment.md); decisions DQ-001 B (industrial cell), DQ-004 A (one integrated analysis), DQ-006 A (two-tier stop), DQ-009 A (development rules) |
-| Waits on | DQ-013 (how workers are protected) and DQ-014 (is a fall into a clear zone acceptable) change several ratings; both outcomes are shown |
+| Decisions applied | Zone separation (DQ-013 A); fall into a clear zone accepted (DQ-014 A); speed limit (DQ-015 A); second channel before the industrial claim (DQ-012 A) |
 
 ## 1. Method
 
@@ -75,15 +75,17 @@ Steps:
 
 ## 4. Hazardous events and risk estimation
 
-Where DQ-013 changes F, both ratings are shown: **zone separation** (workers enter the robot's zone only when it is
-stopped; recommended) and **mixed** (workers move freely around a walking robot).
+The lead chose **zone separation** (DQ-013 A): workers enter the robot's zone only when it has stopped. Ratings
+below use it; the rating under **mixed** use (workers moving freely around a walking robot) is kept in brackets to
+show why mixed use is outside the claim. A worker inside the zone of a walking robot is now foreseeable misuse or a
+failure of the zone sensor, which is what OS-02 and OS-03 cover.
 
 ### 4.1 H-01 Robot falls
 
 | HE | Situation | Harm | Causes | S | F | P | PLr | Rationale |
 |---|---|---|---|---|---|---|---|---|
-| HE-01.1 | OS-02 walking near a worker | Robot falls onto the worker | M: motor fault, CAN loss, IMU error, computer hang (limp on timeout). I: slip, push, obstacle outside training. U: speed too high near people. A: rogue `/cmd_vel` drives it into an obstacle | S2 | F1 zone / F2 mixed | P2 | **d** zone / **e** mixed | S2: 34 kg falling from 1 m onto the head or a knee can fracture. P2: a fall develops in under a second and gives no warning. Zone separation keeps people out of the fall zone while it walks, so exposure is short and rare (F1). Mixed use makes it frequent (F2), and PL e is not reachable on this hardware |
-| HE-01.2 | OS-01 walking, nobody within 2 m | Damage only | As HE-01.1 | — | — | — | none | No person in reach. Acceptable only if DQ-014 accepts a fall into a clear zone |
+| HE-01.1 | OS-02 walking near a worker | Robot falls onto the worker | M: motor fault, CAN loss, IMU error, computer hang (limp on timeout). I: slip, push, obstacle outside training. U: speed too high near people. A: rogue `/cmd_vel` drives it into an obstacle | S2 | F1 (F2 mixed) | P2 | **d** (e mixed) | S2: 34 kg falling from 1 m onto the head or a knee can fracture. P2: a fall develops in under a second and gives no warning. Zone separation keeps people out of the fall zone while it walks, so exposure is short and rare (F1). Mixed use would make it frequent (F2), and PL e is not reachable on this hardware |
+| HE-01.2 | OS-01 walking, nobody within 2 m | Damage only | As HE-01.1 | — | — | — | none | No person in reach. Accepted: a fall into a clear fall zone is an acceptable outcome (DQ-014 A) |
 | HE-01.3 | OS-07 robot falling while a worker steps in to help | Robot or a flailing limb strikes the helper | M, I: policy fights the fall. U: worker reaches for the robot | S2 | F1 | P2 | **d** | Rare, short exposure. The safe stop damps the joints on fall detection (gap assessment §3.1) |
 | HE-01.4 | OS-05 on the gantry, power cut | Robot swings or hits the frame; operator struck | U: harness slack too long | S1 | F2 | P1 | **b** | Development only; harness length is set per GT-11 |
 
@@ -91,7 +93,7 @@ stopped; recommended) and **mixed** (workers move freely around a walking robot)
 
 | HE | Situation | Harm | Causes | S | F | P | PLr | Rationale |
 |---|---|---|---|---|---|---|---|---|
-| HE-02.1 | OS-03 standing, worker within reach | Arm or leg strikes the worker's head or body | M: wrong target, motor runaway. I: policy output spike. A: injected command or tampered policy file | S2 | F1 zone / F2 mixed | P2 | **d** zone / **e** mixed | S2: a leg joint at 120 N·m can break bones; an arm at 3–4 m/s can injure the head. P2: sudden. In a separated cell workers come within reach only with the robot stopped |
+| HE-02.1 | OS-03 standing, worker within reach | Arm or leg strikes the worker's head or body | M: wrong target, motor runaway. I: policy output spike. A: injected command or tampered policy file | S2 | F1 (F2 mixed) | P2 | **d** (e mixed) | S2: a leg joint at 120 N·m can break bones; an arm at 3–4 m/s can injure the head. P2: sudden. In a separated cell workers come within reach only with the robot stopped |
 | HE-02.2 | OS-02 walking near a worker | Swinging arm strikes a passer-by | I: arm swing wider than expected | S1 | F2 | P1 | **b** | Arm swing during walking is visible and slow enough to step back from; body-region contact limits (ISO 10218-2) to check at G1 |
 
 ### 4.3 H-03 Walks wrongly or keeps walking
@@ -113,7 +115,7 @@ stopped; recommended) and **mixed** (workers move freely around a walking robot)
 | HE | Situation | Harm | Causes | S | F | P | PLr | Rationale |
 |---|---|---|---|---|---|---|---|---|
 | HE-05.1 | Any, a stop demanded to end H-01…H-04 | The harm the stop should have ended | M: switch contact welded, wiring fault, software stop path hung. A: CPU starvation delays the software stop | S2 | F1 | P2 | **d** | A stop function takes the PLr of what it protects against. ISO 10218-1 also sets its own minimum for the emergency stop; to confirm against the 2025 text |
-| HE-05.2 | OS-02 or OS-03, a stop demanded near a worker | The stop itself drops the robot onto the worker | Design: power cut is category 0 on a balancing robot (gap assessment F-08) | S2 | F1 zone / F2 mixed | P2 | **d** zone / **e** mixed | This is why the soft stop crouches before power is removed (DQ-006 A) and why the red button is used with the robot supported during development |
+| HE-05.2 | OS-02 or OS-03, a stop demanded near a worker | The stop itself drops the robot onto the worker | Design: power cut is category 0 on a balancing robot (gap assessment F-08) | S2 | F1 (F2 mixed) | P2 | **d** (e mixed) | This is why the soft stop crouches before power is removed (DQ-006 A) and why the red button is used with the robot supported during development |
 
 ### 4.6 H-06 Unexpected start
 
@@ -133,24 +135,23 @@ stopped; recommended) and **mixed** (workers move freely around a walking robot)
 
 ## 5. Safety functions and required performance levels
 
-| ID | Safety function | Events | PLr (zone / mixed) | Today |
+| ID | Safety function | Events | PLr | Today |
 |---|---|---|---|---|
-| SF-01 | Joint envelope: position, speed and torque limits enforced outside the policy | HE-02.1, HE-04.1, HE-06.1 | d / e | Position clamp in software on the computer; no speed or torque limit; nothing outside the computer (DQ-007, DQ-012) |
-| SF-02 | Command-loss stop: motors stop when commands stop | HE-01.1, HE-03.1, HE-05.1 | d / e | 200 ms motor timeout set; unverified on the motors (AOU-01) |
-| SF-03 | Soft stop: crouch, then remove power | HE-05.2, HE-01.1 | d / e | Not built (F-08). The software safe stop damps the joints instead |
+| SF-01 | Joint envelope: position, speed and torque limits enforced outside the policy | HE-02.1, HE-04.1, HE-06.1 | d | Position clamp in software on the computer; no speed or torque limit; nothing outside the computer yet. Adapters first (DQ-007 A), second channel before G3 (DQ-012 A) |
+| SF-02 | Command-loss stop: motors stop when commands stop | HE-01.1, HE-03.1, HE-05.1 | d | 200 ms motor timeout set; unverified on the motors (AOU-01) |
+| SF-03 | Soft stop: crouch, then remove power | HE-05.2, HE-01.1 | d | Not built (F-08). The software safe stop damps the joints instead |
 | SF-04 | Emergency stop: red switch removes motor power | HE-05.1 | d (and the ISO 10218-1 minimum) | Switch fitted; single channel; wiring unverified (AOU-04) |
-| SF-05 | Protective stop and speed limit when a worker comes near | HE-01.1, HE-02.1, HE-03.2 | d | Not built; depends on DQ-013 and DQ-015 |
+| SF-05 | Protective stop when a worker enters the robot's zone (soft stop); 0.3 m/s while a worker is in the cell (DQ-013 A, DQ-015 A) | HE-01.1, HE-02.1, HE-03.2 | d | Not built; needs a safety-rated presence sensor (to choose) |
 | SF-06 | Prevention of unexpected start: no motion on enable; reset and start only by a deliberate local action | HE-06.1, HE-06.2 | d | Targets cleared at enable (software); reset and start accept remote service calls |
-| SF-07 | Fall response: detect the fall, damp the joints, keep the fall zone clear | HE-01.1, HE-01.3 | d / e | Tilt detection and damped safe stop in software; fall zone depends on DQ-013, DQ-014 |
+| SF-07 | Fall response: detect the fall, damp the joints, keep the fall zone clear | HE-01.1, HE-01.3 | d | Tilt detection and damped safe stop in software; fall zone kept clear by SF-05 (DQ-014 A) |
 | SF-08 | Only authorised sources may command motion | HE-01.1, HE-02.1, HE-03.1, HE-06 | d (as the functions it protects) | Not built: DDS without security (gap assessment F-10) |
 | SF-09 | Battery protection | HE-08.1 | d, or covered by AOU-03 | Unknown (AOU-03) |
 | SF-10 | Enabled-state indication | HE-10.1 | c | Not built |
 
-**What the table says.** With zone separation, every safety function needs PL d. With mixed use, the fall, limb and
-stop functions need PL e, which a balancing robot on this hardware is not expected to reach. Zone separation and
-accepting a fall into a clear zone (the recommendations of DQ-013 and DQ-014) are what keep the claim reachable.
-PL d needs a two-channel structure with diagnostics (category 3) for most of these functions, which the adapters
-alone do not give (DQ-012).
+**What the table says.** With zone separation (DQ-013 A) and a fall into a clear zone accepted (DQ-014 A), every
+safety function needs PL d; mixed use would push the fall, limb and stop functions to PL e. PL d needs a two-channel
+structure with diagnostics (category 3) for most of these functions, which the adapters alone do not give; the
+second channel comes before the industrial claim (DQ-012 A).
 
 ## 6. Safety and security interactions
 
@@ -166,7 +167,7 @@ alone do not give (DQ-012).
 
 | ID | Item |
 |---|---|
-| HOI-01 | Re-rate F for HE-01.1, HE-02.1 and HE-05.2 once DQ-013 is answered; settle HE-01.2 once DQ-014 is answered |
+| HOI-01 | ~~Re-rate F once DQ-013 and DQ-014 are answered~~ done in v0.2 |
 | HOI-02 | Check the 2025 texts of ISO 10218-1/-2 for the minimum PL of the emergency stop and protective stop, and for body-region contact limits (HE-02.2) |
 | HOI-03 | Measure fall kinematics on the gantry (GT-11) to replace the 5 m/s estimate |
 | HOI-04 | Extend to the policies outside the first claim, one at a time, with an impact analysis |

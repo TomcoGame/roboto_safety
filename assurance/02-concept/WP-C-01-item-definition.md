@@ -4,10 +4,10 @@
 |---|---|
 | Work product | WP-C-01 Item definition |
 | Standard reference | ISO 12100:2010 §5.3 (limits of the machinery); ISO 13849-1:2023 §4 (inputs to safety function design); ISO 10218-1:2025 (robot as machine) |
-| Version | 0.1 (first draft; 2026-10-28) |
+| Version | 0.2 (zone separation, fall zone and speed limit applied: DQ-013 A, DQ-014 A, DQ-015 A; 2026-10-28). 0.1 (first draft; 2026-10-28) |
 | Status | Draft, I0 (AI-authored, not verified). Human review requested |
 | Author | Claude (AI assistant) |
-| Decisions applied | Intended use: industrial work cell alongside trained workers (DQ-001 B); reference configuration (DQ-008 A); development operating rules (DQ-009 A) |
+| Decisions applied | Intended use: industrial work cell alongside trained workers (DQ-001 B); reference configuration (DQ-008 A); development operating rules (DQ-009 A); zone separation (DQ-013 A); fall into a clear zone accepted (DQ-014 A); speed with a worker in the cell (DQ-015 A) |
 
 ## 1. Item identification
 
@@ -47,6 +47,7 @@ first claim.
 | F-07 | Emergency stop: remove power | Red switch on the 48 V supply | Yes |
 | F-08 | Soft stop: crouch, then remove power (DQ-006 A) | Not built yet | Planned |
 | F-09 | Report state (joint states, IMU, actions) | ROS topics | Yes, QM |
+| F-10 | Protective stop when a worker enters the robot's zone; speed limited to 0.3 m/s while a worker is in the cell (DQ-013 A, DQ-015 A) | Safety-rated presence sensor (not chosen) and the soft stop | Planned |
 
 Out of the first claim, joining later by impact analysis: the other policies (parkour, get-up, motion imitation,
 interrupt, AMP, attention encoder), XR teleoperation, navigation, depth perception.
@@ -65,7 +66,7 @@ pack and emergency-stop switch; wiring; gamepad and receiver.
 |---|---|
 | Operator | Trained; commands motion, holds the stop, follows the operating rules |
 | Workers in the cell | Trained; the people the claim protects alongside the operator |
-| Work cell | Floor, boundaries, any guarding and presence sensing (how workers are protected is decision DQ-013) |
+| Work cell | Floor and boundaries. The robot walks in its own zone; a safety-rated presence sensor around that zone (part of the item once chosen) detects a worker entering (DQ-013 A). Around the robot, a fall zone of at least its height plus a margin is kept clear while it moves (DQ-014 A) |
 | Gantry or harness | Development phase: catches the robot on a power cut (DQ-009 A, DQ-017) |
 | Other ROS hosts on the network | Can publish to `/cmd_vel` and call services; no authentication today (gap assessment F-10) |
 | Charger | Charges the battery outside operation |
