@@ -43,6 +43,9 @@ void InferenceNode::load_config() {
     this->declare_parameter<float>("gravity_z_upper", -0.5);
     this->declare_parameter<double>("gamma", 0.8);
     this->declare_parameter<int>("window_size", 1);
+    this->declare_parameter<double>("cmd_timeout", 0.5);
+    this->declare_parameter<int>("max_consecutive_overruns", 5);
+    this->declare_parameter<double>("safe_stop_damp_time", 3.0);
     std::vector<std::string> model_names;
     std::vector<std::string> motion_names;
     std::vector<std::string> latent_names;
@@ -104,6 +107,16 @@ void InferenceNode::load_config() {
     this->get_parameter("gamma", latent_gamma);
     int latent_window_size = 1;
     this->get_parameter("window_size", latent_window_size);
+    this->get_parameter("cmd_timeout", cmd_timeout_);
+    this->get_parameter("max_consecutive_overruns", max_consecutive_overruns_);
+    this->get_parameter("safe_stop_damp_time", safe_stop_damp_time_);
+    if (cmd_timeout_ <= 0.0 || safe_stop_damp_time_ < 0.0) {
+        throw std::runtime_error("cmd_timeout must be positive and safe_stop_damp_time non-negative");
+    }
+    if (!joint_limits_.empty() && joint_limits_.size() != static_cast<size_t>(joint_num_) * 2) {
+        throw std::runtime_error("joint_limits must contain a lower and upper limit for each of the " +
+                                 std::to_string(joint_num_) + " joints");
+    }
 
     policies_.clear();
     motion_policy_indices_.clear();
@@ -292,11 +305,21 @@ void InferenceNode::load_config() {
     print_vector<double>("joint_default_angle", joint_default_angle_);
     print_vector<double>("joint_limits", joint_limits_);
     RCLCPP_INFO(this->get_logger(), "gravity_z_upper: %f", gravity_z_upper_);
+    RCLCPP_INFO(this->get_logger(), "cmd_timeout: %f", cmd_timeout_);
+    RCLCPP_INFO(this->get_logger(), "max_consecutive_overruns: %d", max_consecutive_overruns_);
+    RCLCPP_INFO(this->get_logger(), "safe_stop_damp_time: %f", safe_stop_damp_time_);
 }
 
 void InferenceNode::subs_joy_callback(const std::shared_ptr<sensor_msgs::msg::Joy> msg) {
+    if (msg->axes.size() < 6 || msg->buttons.size() < 6) {
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
+                             "Ignoring /joy message with %zu axes and %zu buttons (need 6 of each)",
+                             msg->axes.size(), msg->buttons.size());
+        return;
+    }
     if (is_joy_control_){
         std::unique_lock<std::mutex> lock(cmd_mutex_);
+        mark_cmd_received();
         cmd_vel_[0] = std::clamp(msg->axes[4] * clip_cmd_[1], clip_cmd_[0], clip_cmd_[1]);
         cmd_vel_[1] = std::clamp(msg->axes[3] * clip_cmd_[3], clip_cmd_[2], clip_cmd_[3]);
             if (msg->axes[2] < 0) {
@@ -308,20 +331,32 @@ void InferenceNode::subs_joy_callback(const std::shared_ptr<sensor_msgs::msg::Jo
         }
     }
     if ((msg->buttons[2] == 1 && msg->buttons[2] != last_button0_)) {
-        if (is_running_.load()){
-            reset_runtime_state();
-            RCLCPP_INFO(this->get_logger(), "Inference paused");
-        }
-        try {
-            if (robot_->is_init_.load()){
-                robot_->deinit_motors();
-                RCLCPP_INFO(this->get_logger(), "Motors deinitialized");
-            } else {
-                robot_->init_motors();
-                RCLCPP_INFO(this->get_logger(), "Motors initialized");
+        // Disabling every motor drops a standing robot, so it takes a second press within
+        // deinit_confirm_window; enabling takes one.
+        const auto now = std::chrono::steady_clock::now();
+        const bool deinit_requested = robot_->is_init_.load();
+        const bool deinit_confirmed = deinit_requested && last_deinit_press_ &&
+                                      now - *last_deinit_press_ <= deinit_confirm_window;
+        if (deinit_requested && !deinit_confirmed) {
+            last_deinit_press_ = now;
+            RCLCPP_WARN(this->get_logger(), "Press 'X' again within 1 s to disable all motors");
+        } else {
+            last_deinit_press_.reset();
+            if (is_running_.load()){
+                reset_runtime_state();
+                RCLCPP_INFO(this->get_logger(), "Inference paused");
             }
-        } catch (const std::exception& e) {
-            RCLCPP_WARN(this->get_logger(), "Failed to change motor state: %s", e.what());
+            try {
+                if (deinit_requested){
+                    robot_->deinit_motors();
+                    RCLCPP_INFO(this->get_logger(), "Motors deinitialized");
+                } else {
+                    init_motors_clearing_safe_stop();
+                    RCLCPP_INFO(this->get_logger(), "Motors initialized");
+                }
+            } catch (const std::exception& e) {
+                RCLCPP_WARN(this->get_logger(), "Failed to change motor state: %s", e.what());
+            }
         }
     }
     if (msg->buttons[0] == 1 && msg->buttons[0] != last_button1_) {
@@ -343,13 +378,18 @@ void InferenceNode::subs_joy_callback(const std::shared_ptr<sensor_msgs::msg::Jo
             RCLCPP_INFO(this->get_logger(), "Inference paused");
         } else if (!robot_->is_init_.load()) {
             RCLCPP_WARN(this->get_logger(), "Motors are not initialized, cannot start inference");
-        } else {
+        } else if (!refuse_during_safe_stop("start inference")) {
             is_running_.store(true);
             RCLCPP_INFO(this->get_logger(), "Inference started");
         }
     }
     if (msg->buttons[3] == 1 && msg->buttons[3] != last_button3_) {
         is_joy_control_.store(!is_joy_control_);
+        {
+            std::unique_lock<std::mutex> lock(cmd_mutex_);
+            std::fill(cmd_vel_.begin(), cmd_vel_.end(), 0.0f);
+            last_cmd_ns_.store(0);
+        }
         RCLCPP_INFO(this->get_logger(), "Controlled by %s", is_joy_control_.load() ? "joy" : "/cmd_vel");
     }
     if (supports_interrupt() || has_motion_policy()) {
@@ -415,6 +455,7 @@ void InferenceNode::subs_joy_callback(const std::shared_ptr<sensor_msgs::msg::Jo
 void InferenceNode::subs_cmd_callback(const std::shared_ptr<geometry_msgs::msg::Twist> msg){
     if(!is_joy_control_){
         std::unique_lock<std::mutex> lock(cmd_mutex_);
+        mark_cmd_received();
         cmd_vel_[0] = std::clamp(msg->linear.x, clip_cmd_[0], clip_cmd_[1]);
         cmd_vel_[1] = std::clamp(msg->linear.y, clip_cmd_[2], clip_cmd_[3]);
         cmd_vel_[2] = std::clamp(msg->angular.z, clip_cmd_[4], clip_cmd_[5]);
@@ -449,6 +490,9 @@ bool InferenceNode::start_joint_reset() {
     }
     if (!robot_->is_init_.load()) {
         throw std::runtime_error("Motors are not initialized");
+    }
+    if (safe_stop_active_.load()) {
+        throw std::runtime_error("Safe stop is active; press 'X' to disable and re-initialize the motors first");
     }
     if (reset_thread_.joinable()) {
         reset_thread_.join();
@@ -576,7 +620,7 @@ void InferenceNode::clear_errors_srv(const std::shared_ptr<std_srvs::srv::Trigge
 void InferenceNode::init_motors_srv(const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
                                     std::shared_ptr<std_srvs::srv::Trigger::Response> response) {
     try {
-        robot_->init_motors();
+        init_motors_clearing_safe_stop();
         response->success = true;
         response->message = "Motors initialized successfully";
     } catch (const std::exception& e) {
@@ -612,6 +656,11 @@ void InferenceNode::start_inference_srv(const std::shared_ptr<std_srvs::srv::Tri
         response->success = false;
         response->message = "Motors are not initialized, cannot start inference";
         RCLCPP_WARN(this->get_logger(), "%s", response->message.c_str());
+        return;
+    }
+    if (refuse_during_safe_stop("start inference")) {
+        response->success = false;
+        response->message = "Safe stop is active; disable and re-initialize the motors first";
         return;
     }
     is_running_.store(true);

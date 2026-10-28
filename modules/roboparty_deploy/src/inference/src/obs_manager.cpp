@@ -206,9 +206,8 @@ void InferenceNode::get_gravity_b_obs(std::vector<float>& segment) {
     Eigen::Quaternionf q_w2b = q_b2w.inverse();
     Eigen::Vector3f gravity_b = q_w2b * gravity_w;
     if (gravity_b.z() > gravity_z_upper_){
-        RCLCPP_FATAL(this->get_logger(), "Robot fell down! Shutting down...");
-        rclcpp::shutdown();
-        throw std::runtime_error("Robot fell down");
+        throw std::runtime_error("robot fell (gravity_b.z " + std::to_string(gravity_b.z()) +
+                                 " above " + std::to_string(gravity_z_upper_) + ")");
     }
     segment[0] = gravity_b.x() * obs_scales_gravity_b_;
     segment[1] = gravity_b.y() * obs_scales_gravity_b_;
@@ -217,6 +216,18 @@ void InferenceNode::get_gravity_b_obs(std::vector<float>& segment) {
 
 void InferenceNode::get_cmd_vel_obs(std::vector<float>& segment) {
     std::unique_lock<std::mutex> lock(cmd_mutex_);
+    const int64_t last_cmd_ns = last_cmd_ns_.load();
+    const int64_t now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    if (last_cmd_ns == 0 || static_cast<double>(now_ns - last_cmd_ns) * 1e-9 > cmd_timeout_) {
+        std::fill(cmd_vel_.begin(), cmd_vel_.end(), 0.0f);
+        if (last_cmd_ns != 0 && !cmd_stale_reported_) {
+            RCLCPP_WARN(this->get_logger(), "No velocity command for %.2f s; commanding zero velocity", cmd_timeout_);
+            cmd_stale_reported_ = true;
+        }
+    } else {
+        cmd_stale_reported_ = false;
+    }
     segment[0] = cmd_vel_[0] * obs_scales_lin_vel_;
     segment[1] = cmd_vel_[1] * obs_scales_lin_vel_;
     segment[2] = cmd_vel_[2] * obs_scales_ang_vel_;
@@ -228,10 +239,11 @@ void InferenceNode::get_dof_pos_obs(std::vector<float>& segment) {
         segment[i] = (joint_pos_buffer_[usd2urdf_[i]] - joint_default_angle_[usd2urdf_[i]]) * obs_scales_dof_pos_;
     }
     for(size_t i = 0; i < joint_limits_.size() / 2; i++){
-        if(joint_pos_buffer_[i] < joint_limits_[i * 2] || joint_pos_buffer_[i] > joint_limits_[i * 2 + 1]){
-            RCLCPP_FATAL(this->get_logger(), "Joint %zu out of limit! Shutting down...", i+1);
-            rclcpp::shutdown();
-            throw std::runtime_error("Joint out of limit");
+        // Compared in float, the precision clamp_to_joint_limits() writes targets in.
+        if(joint_pos_buffer_[i] < static_cast<float>(joint_limits_[i * 2]) ||
+           joint_pos_buffer_[i] > static_cast<float>(joint_limits_[i * 2 + 1])){
+            throw std::runtime_error("joint " + std::to_string(i + 1) + " out of limit (" +
+                                     std::to_string(joint_pos_buffer_[i]) + " rad)");
         }
     }
 }

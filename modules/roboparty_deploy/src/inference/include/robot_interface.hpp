@@ -41,6 +41,7 @@ class RobotInterface {
         std::vector<std::string> motor_interface_;
         std::vector<long int> motor_id_, motor_model_, motor_num_;
         std::vector<double> motor_zero_offset_;
+        uint32_t can_timeout_ms_ = 0;
     };
     struct RobotCfg{
         std::vector<long int> close_chain_motor_idx_, motor_sign_, urdf2motor_;
@@ -52,8 +53,16 @@ class RobotInterface {
                       const std::vector<float>& kp = {},
                       const std::vector<float>& kd = {},
                       const std::vector<float>& tau = {});
-    void init_motors();
+    // apply_can_timeout: set the motors' command timeout from robot.yaml. Only callers that keep
+    // commanding the motors while they are enabled (hold()) may pass true.
+    void init_motors(bool apply_can_timeout = false);
     void deinit_motors();
+    // Resend the current targets so a motor command timeout does not trip while the robot is
+    // enabled but no policy is running. Returns false when skipped (not initialized, or another
+    // command such as a joint reset owns the bus).
+    bool hold();
+    // Damped state for a safe stop: kp = 0, kd from robot.yaml, no feed-forward torque.
+    void damp();
     void reset_joints(std::vector<double> joint_default_angle);
     void set_zeros();
     void clear_errors();
@@ -97,6 +106,7 @@ class RobotInterface {
     }
 
     std::atomic<bool> is_init_{false};
+    std::atomic<bool> can_timeout_applied_{false};
 
    private:
     std::shared_ptr<IMUCfg> imu_cfg_;
@@ -134,5 +144,6 @@ class RobotInterface {
     }
     void throw_if_motors_offline() const;
     void motors_mit_cmd();
+    void clear_motor_targets();
     void forward_close_chain();
 };

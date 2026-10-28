@@ -21,6 +21,10 @@ motors:
          0, 0, 0, 0, 0,
          0, 0, 0, 0, 0]
     master_id_offset: 16
+    # Motor CAN command timeout (ms). The inference node sets it when it enables the motors and
+    # keeps commanding them while enabled; a motor that hears nothing for this long leaves enable
+    # mode (goes limp). Cleared again when the node disables the motors. 0 or absent: not set.
+    can_timeout_ms: 200
     motor_zero_offset: 
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
          0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.093,

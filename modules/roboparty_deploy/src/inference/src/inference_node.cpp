@@ -263,6 +263,64 @@ void InferenceNode::apply_action() {
     robot_->apply_action(last_act_);
 }
 
+namespace {
+int64_t steady_now_ns() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+}  // namespace
+
+void InferenceNode::enter_safe_stop(const std::string& reason) {
+    if (safe_stop_active_.exchange(true)) {
+        return;
+    }
+    is_running_.store(false);
+    const auto damp_time = std::chrono::duration<double>(safe_stop_damp_time_);
+    safe_stop_deadline_ns_.store(
+        steady_now_ns() + std::chrono::duration_cast<std::chrono::nanoseconds>(damp_time).count());
+    RCLCPP_FATAL(this->get_logger(),
+                 "Safe stop: %s. Joints damped for %.1f s, then motors disabled; press 'X' to re-initialize.",
+                 reason.c_str(), safe_stop_damp_time_);
+    try {
+        robot_->damp();
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(this->get_logger(), "Safe stop could not command damping: %s", e.what());
+    }
+    try {
+        reset_runtime_state();
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(this->get_logger(), "Safe stop could not reset the runtime state: %s", e.what());
+    }
+}
+
+bool InferenceNode::refuse_during_safe_stop(const std::string& action) {
+    if (!safe_stop_active_.load()) {
+        return false;
+    }
+    RCLCPP_WARN(this->get_logger(), "Safe stop is active, cannot %s; disable and re-initialize the motors first",
+                action.c_str());
+    return true;
+}
+
+void InferenceNode::init_motors_clearing_safe_stop() {
+    robot_->init_motors(true);
+    safe_stop_active_.store(false);
+}
+
+void InferenceNode::mark_cmd_received() {
+    last_cmd_ns_.store(steady_now_ns());
+}
+
+void InferenceNode::clamp_to_joint_limits(std::vector<float>& act) const {
+    if (joint_limits_.empty()) {
+        return;
+    }
+    for (size_t i = 0; i < act.size(); i++) {
+        act[i] = std::clamp(act[i], static_cast<float>(joint_limits_[i * 2]),
+                            static_cast<float>(joint_limits_[i * 2 + 1]));
+    }
+}
+
 void InferenceNode::control() {
     pthread_setname_np(pthread_self(), "control");
     struct sched_param sp{}; sp.sched_priority = 45;
@@ -276,11 +334,28 @@ void InferenceNode::control() {
     while(rclcpp::ok()){
         next_release += period;
         try {
-            apply_action();
+            if (safe_stop_active_.load()) {
+                if (robot_->is_init_.load()) {
+                    if (steady_now_ns() >= safe_stop_deadline_ns_.load()) {
+                        robot_->deinit_motors();
+                        RCLCPP_WARN(this->get_logger(), "Motors disabled after safe stop; press 'X' to re-initialize");
+                    } else {
+                        robot_->damp();
+                    }
+                }
+            } else if (is_running_.load()) {
+                apply_action();
+            } else {
+                // Keeps enabled motors commanded so their CAN timeout only trips if this process stops.
+                robot_->hold();
+            }
         } catch (const std::exception& e) {
-            RCLCPP_FATAL(this->get_logger(), "Exception in control thread: %s", e.what());
-            rclcpp::shutdown();
-            return;
+            if (safe_stop_active_.load()) {
+                RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+                                      "Control thread error during safe stop: %s", e.what());
+            } else {
+                enter_safe_stop(std::string("control thread error: ") + e.what());
+            }
         }
         auto loop_end = std::chrono::steady_clock::now();
         if (loop_end > next_release) {
@@ -319,6 +394,7 @@ void InferenceNode::inference() {
         next_release += period;
         auto loop_start = std::chrono::steady_clock::now();
         if(!is_running_.load()){
+            consecutive_overruns_ = 0;
             const auto now = std::chrono::steady_clock::now();
             if (now > next_release) {
                 const auto missed_periods = (now - next_release) / period;
@@ -401,23 +477,28 @@ void InferenceNode::inference() {
                         act_[act_.size() - interrupt_action_.size() + i] = interrupt_action_[i];
                     }
                 }
+                clamp_to_joint_limits(act_);
             }
             publish_action();
         } catch (const std::exception& e) {
-            RCLCPP_FATAL(this->get_logger(), "Exception in inference thread: %s", e.what());
-            rclcpp::shutdown();
-            return;
+            enter_safe_stop(std::string("inference error: ") + e.what());
         }
 
         auto loop_end = std::chrono::steady_clock::now();
         auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(loop_end - loop_start);
         if (loop_end > next_release) {
             RCLCPP_WARN(this->get_logger(), "Inference loop overran! Took %lld us, but period is %lld us.", static_cast<long long>(elapsed_time.count()), static_cast<long long>(period.count()));
+            if (is_running_.load() && max_consecutive_overruns_ > 0 &&
+                ++consecutive_overruns_ >= max_consecutive_overruns_) {
+                enter_safe_stop(std::to_string(consecutive_overruns_) + " consecutive inference overruns");
+            }
             const auto missed_periods = (loop_end - next_release) / period;
             next_release += period * missed_periods;
             if (next_release < loop_end) {
                 next_release += period;
             }
+        } else {
+            consecutive_overruns_ = 0;
         }
         std::this_thread::sleep_until(next_release);
     }
@@ -434,7 +515,7 @@ int main(int argc, char **argv) {
         node = std::make_shared<InferenceNode>();
         rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 2);
         executor.add_node(node);
-        RCLCPP_INFO(node->get_logger(), "Press 'X' to initialize/deinitialize motors");
+        RCLCPP_INFO(node->get_logger(), "Press 'X' to initialize motors; press 'X' twice within 1 s to disable them");
         RCLCPP_INFO(node->get_logger(), "Press 'A' to reset motors");
         RCLCPP_INFO(node->get_logger(), "Press 'B' to start/pause inference");
         RCLCPP_INFO(node->get_logger(), "Press 'Y' to switch between Gamepad Control / cmd_vel Control");

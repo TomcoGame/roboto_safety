@@ -30,6 +30,7 @@ RobotInterface::RobotInterface(const std::string& config_file) {
         if (motors_node["motor_id"]) motors_cfg_->motor_id_ = motors_node["motor_id"].as<std::vector<long int>>();
         if (motors_node["motor_model"]) motors_cfg_->motor_model_ = motors_node["motor_model"].as<std::vector<long int>>();
         if (motors_node["motor_num"]) motors_cfg_->motor_num_ = motors_node["motor_num"].as<std::vector<long int>>();
+        if (motors_node["can_timeout_ms"]) motors_cfg_->can_timeout_ms_ = motors_node["can_timeout_ms"].as<uint32_t>();
         setup_motors();
     } else {
         throw std::runtime_error("Motors configuration not found in " + config_file);
@@ -315,7 +316,14 @@ void RobotInterface::refresh_joints() {
     exec_motors_parallel([](std::shared_ptr<MotorDriver>& motor, int) {
         motor->refresh_motor_status();
     });
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    // Keep commanding the current targets while the status replies arrive, so an enabled motor
+    // neither times out nor goes uncommanded for the whole second.
+    constexpr int refresh_wait_ms = 1000;
+    constexpr int refresh_period_ms = 20;
+    for (int waited = 0; waited < refresh_wait_ms; waited += refresh_period_ms) {
+        motors_mit_cmd();
+        std::this_thread::sleep_for(std::chrono::milliseconds(refresh_period_ms));
+    }
     read_joints();
 }
 
@@ -336,14 +344,23 @@ void RobotInterface::clear_errors() {
     });
 }
 
-void RobotInterface::init_motors() {
+void RobotInterface::init_motors(bool apply_can_timeout) {
     std::unique_lock<std::mutex> command_lock(command_mutex_);
     if (is_init_.load()) {
         throw std::runtime_error("Motors are already initialized");
     }
+    // Targets left from before a deinit must not be replayed once the motors are enabled again.
+    clear_motor_targets();
     exec_motors_parallel([](std::shared_ptr<MotorDriver>& motor, int) {
         motor->init_motor();
     });
+    if (apply_can_timeout && motors_cfg_->can_timeout_ms_ > 0) {
+        const uint32_t timeout_ms = motors_cfg_->can_timeout_ms_;
+        exec_motors_parallel([timeout_ms](std::shared_ptr<MotorDriver>& motor, int) {
+            motor->set_can_timeout_ms(timeout_ms);
+        });
+        can_timeout_applied_.store(true);
+    }
     is_init_.store(true);
 }
 
@@ -351,9 +368,47 @@ void RobotInterface::deinit_motors() {
     if (!is_init_.exchange(false)) {
         throw std::runtime_error("Motors are already deinitialized");
     }
-    exec_motors_parallel([](std::shared_ptr<MotorDriver>& motor, int) {
+    const bool clear_timeout = can_timeout_applied_.exchange(false);
+    exec_motors_parallel([clear_timeout](std::shared_ptr<MotorDriver>& motor, int) {
         motor->deinit_motor();
+        if (clear_timeout) {
+            // Leave the motors as other tools (e.g. motion_player.py) expect them.
+            motor->set_can_timeout_ms(0);
+        }
     });
+    clear_motor_targets();
+}
+
+bool RobotInterface::hold() {
+    std::unique_lock<std::mutex> command_lock(command_mutex_, std::try_to_lock);
+    if (!command_lock.owns_lock() || !is_init_.load()) {
+        return false;
+    }
+    motors_mit_cmd();
+    return true;
+}
+
+void RobotInterface::damp() {
+    {
+        std::unique_lock<std::mutex> lock(motors_mutex_);
+        for (size_t i = 0; i < motor_pos_target_.size(); i++) {
+            motor_pos_target_[i] = 0.0f;
+            motor_vel_target_[i] = 0.0f;
+            motor_kp_target_[i]  = 0.0f;
+            motor_kd_target_[i]  = static_cast<float>(robot_cfg_->kd_[i]);
+            motor_tau_target_[i] = 0.0f;
+        }
+    }
+    motors_mit_cmd();
+}
+
+void RobotInterface::clear_motor_targets() {
+    std::unique_lock<std::mutex> lock(motors_mutex_);
+    std::fill(motor_pos_target_.begin(), motor_pos_target_.end(), 0.0f);
+    std::fill(motor_vel_target_.begin(), motor_vel_target_.end(), 0.0f);
+    std::fill(motor_kp_target_.begin(), motor_kp_target_.end(), 0.0f);
+    std::fill(motor_kd_target_.begin(), motor_kd_target_.end(), 0.0f);
+    std::fill(motor_tau_target_.begin(), motor_tau_target_.end(), 0.0f);
 }
 
 void RobotInterface::motors_mit_cmd() {

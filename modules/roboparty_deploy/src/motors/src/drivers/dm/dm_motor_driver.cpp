@@ -670,3 +670,10 @@ void DmMotorDriver::refresh_motor_status() {
 void DmMotorDriver::clear_motor_error() {
     clear_motor_error_dm();
 }
+
+void DmMotorDriver::set_can_timeout_ms(uint32_t timeout_ms) {
+    // Damiao TIMEOUT register counts 50 us periods; 0 disables the timeout.
+    // The value is not written to flash, so it lasts until power-off.
+    constexpr uint32_t counts_per_ms = 20;
+    write_register_dm(DM_TIMEOUT, static_cast<int32_t>(timeout_ms * counts_per_ms));
+}

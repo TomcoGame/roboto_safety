@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -203,6 +204,20 @@ class MotorDriver {
      * to reset the software error state of the motor's MCU.
      */
     virtual void clear_motor_error() = 0;
+
+    /**
+     * @brief Sets the motor's CAN command timeout (communication-loss protection).
+     *
+     * When no command arrives within the timeout, the motor leaves enable mode.
+     * The value lives in motor RAM until power-off; 0 disables the timeout.
+     *
+     * @param timeout_ms Timeout in milliseconds, 0 to disable.
+     * @throws std::runtime_error if the motor type does not support it.
+     */
+    virtual void set_can_timeout_ms(uint32_t timeout_ms) {
+        (void)timeout_ms;
+        throw std::runtime_error("CAN command timeout is not supported for this motor type");
+    }
 
     /**
      * @brief Retrieves the unique identifier (ID) of the motor.
