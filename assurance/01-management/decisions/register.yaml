@@ -316,7 +316,9 @@
       title: "Adapters only; claim the lower PL the risk assessment allows"
       detail: "No new hardware. Cost: workers likely cannot share the cell with the robot moving; needs zone separation for every task."
   sources: ["assurance/01-management/WP-M-01-assurance-strategy.md §3.2", "DQ-001", "DQ-007"]
-  status: open
+  status: applied
+  answer: {choice: A, via: inbox, at: 2026-10-28, by: u_X1u501HWo3YGVNlzcvkvmg}
+  applied: {ref: "005e53b", record: "WP-M-01 v0.3 §3.2, §6; WP-C-03 v0.2 SF-01, §5", at: 2026-10-28}
 
 - id: DQ-013
   question: "How should workers be protected when they share the cell with the robot?"
@@ -344,7 +346,9 @@
       title: "Power and force limiting"
       detail: "Workers may touch the robot. Cost: a falling robot of this mass can exceed body-region limits; likely not reachable on this hardware."
   sources: ["assurance/01-management/WP-M-02-standards-map.md §2.2, §3.1 H4", "assurance/02-concept/WP-C-03-integrated-hazard-analysis.md §5"]
-  status: open
+  status: applied
+  answer: {choice: A, via: inbox, at: 2026-10-28, by: u_X1u501HWo3YGVNlzcvkvmg}
+  applied: {ref: "005e53b", record: "WP-M-01 v0.3 §3.1, §4 item 3, §6; WP-M-02 v0.3 §3.2; WP-C-01 v0.2 F-10, §3.2; WP-C-03 v0.2 §4, SF-05", at: 2026-10-28}
 
 - id: DQ-014
   question: "Is it acceptable for the robot to fall, if nobody is within reach of the fall?"
@@ -371,7 +375,9 @@
       title: "Yes, anywhere"
       detail: "No clear zone. Cost: a person can be struck by a falling robot. Not recommended."
   sources: ["assurance/01-management/WP-M-02-standards-map.md §1, §4", "DQ-006", "assurance/02-concept/WP-C-03-integrated-hazard-analysis.md HE-01.1, HE-01.2"]
-  status: open
+  status: applied
+  answer: {choice: A, via: inbox, at: 2026-10-28, by: u_X1u501HWo3YGVNlzcvkvmg}
+  applied: {ref: "005e53b", record: "WP-M-01 v0.3 §3.2 safe state, §4 item 2; WP-M-02 v0.3 §3.2; WP-C-01 v0.2 §3.2; WP-C-03 v0.2 HE-01.2, SF-07", at: 2026-10-28}
 
 - id: DQ-015
   question: "How fast may the robot walk when a worker is in the cell?"
@@ -396,7 +402,9 @@
       title: "No extra cap"
       detail: "Fastest. Cost: larger zones, harder falls."
   sources: ["modules/roboparty_deploy/src/inference/robots/rpo/configs/default.yaml:22", "assurance/00-assessment/gap-assessment.md F-01"]
-  status: open
+  status: applied
+  answer: {choice: A, via: inbox, at: 2026-10-28, by: u_X1u501HWo3YGVNlzcvkvmg}
+  applied: {ref: "005e53b", record: "WP-M-01 v0.3 §3.1; WP-M-02 v0.3 §3.2; WP-C-01 v0.2 F-10; WP-C-03 v0.2 SF-05", at: 2026-10-28}
 
 - id: DQ-016
   question: "Who signs off safety work while there is no external review?"
@@ -418,26 +426,151 @@
       title: "Name a second person at TomcoGame as reviewer"
       detail: "Gives real verification reviews. Cost: their time, and they need machinery-safety competence."
   sources: ["DQ-010", "assurance/01-management/WP-M-01-assurance-strategy.md §5"]
-  status: open
+  status: applied
+  answer: {choice: A, via: inbox, at: 2026-10-28, by: u_X1u501HWo3YGVNlzcvkvmg}
+  applied: {ref: "005e53b", record: "WP-M-01 v0.3 header (approver), §6", at: 2026-10-28}
 
 - id: DQ-017
-  question: "Should we buy or build the gantry the development rules need?"
+  question: "Should we buy Unitree's G1 gantry for the first powered tests, or build our own?"
   context: >-
-    You set that every untested policy or change runs on a gantry or harness. Without one, no powered testing of a new
-    policy can start. The gantry must catch it on a power cut without letting it hit the
-    floor or the frame.
+    You answered "dunno" last time, so here is a concrete choice. No powered test can start without a gantry (your
+    development rules), and the first tests (WP-V-01) hang the robot in it. Unitree sells a gantry made for its G1
+    humanoid, which weighs about 35 kg; ours is about 34 kg, so it is the right size class. Listed prices run from
+    about $675 to $1,500 depending on the seller, with lead times of weeks.
   reversibility: easy
-  blocks: "Any powered test (DQ-009); motor and stop characterisation (gap assessment §4 item 6)"
+  blocks: "Every powered test in WP-V-01; verifying the motor timeout and the safe stop on the robot"
   gate: G0
-  asked: 2026-10-26
-  batch: 2
+  asked: 2026-10-28
+  batch: 3
+  note: "Answered 'other: dunno' via the inbox on 2026-10-28; rewritten around a concrete product."
   options:
     - key: A
       recommended: true
-      title: "Buy a commercial robot gantry with a fall-arrest harness"
-      detail: "Rated load and fall arrest you can rely on. Cost: the larger outlay, lead time."
+      title: "Buy the Unitree G1 gantry"
+      detail: "Made for a humanoid of our mass; ready to use. Cost: about $675–1,500 and a few weeks' wait. We still check that its height range fits RPO and that its harness catches a fall (test GT-11)."
     - key: B
-      title: "Build one from aluminium extrusion and a rated hoist"
-      detail: "Cheaper and quick. Cost: we must check its load rating ourselves."
-  sources: ["DQ-009", "assurance/00-assessment/gap-assessment.md §4"]
+      title: "Build one from aluminium extrusion with a rated hoist and harness"
+      detail: "Likely cheaper and can be ready sooner. Cost: someone's build time, and we must prove its load rating ourselves before trusting it."
+  sources: ["DQ-009", "assurance/06-validation/WP-V-01-gantry-test-procedure.md §3", "https://www.robotshop.com/products/unitree-g1-gantry-support", "https://stemfinity.com/collections/unitree/products/unitree-gantry"]
+  status: open
+
+- id: DQ-018
+  question: "Which sensor should detect a worker entering the robot's zone?"
+  context: >-
+    You chose zone separation: the robot stops when a worker enters its zone, and walks slower while anyone is in
+    the cell. That needs a safety-rated sensor (PL d) around the zone. It is not needed for the gantry tests, but it
+    is for walking freely in the cell (G3), and the choice shapes the safety concept now.
+  reversibility: revisit
+  blocks: "SF-05 protective stop and speed limit; G3 walking in the cell"
+  gate: G1
+  asked: 2026-10-28
+  batch: 3
+  options:
+    - key: A
+      recommended: true
+      title: "A safety laser scanner covering the zone"
+      detail: "Sees anyone anywhere in the zone, and can also report whether the cell is empty for the speed limit. Cost: the most expensive of the three, plus wiring it to the stop."
+    - key: B
+      title: "Light curtains at the zone's entries"
+      detail: "Detects crossing the boundary only; cheaper. Cost: misses someone already inside, and needs a separate cell-empty signal."
+    - key: C
+      title: "Pressure-sensitive floor mats"
+      detail: "Simple presence detection. Cost: covers only the mat area; wear, and a walking robot on them must be excluded."
+  sources: ["assurance/02-concept/WP-C-03-integrated-hazard-analysis.md SF-05", "DQ-013", "DQ-015"]
+  status: open
+
+- id: DQ-019
+  question: "Should resetting and starting the robot be possible only from the local gamepad?"
+  context: >-
+    Today any computer on the robot's network can call the reset and start services and make the robot move, and
+    nothing checks who is calling. The hazard analysis rates an unexpected start near someone at PL d. Stopping
+    remotely is always fine; starting remotely is the risk.
+  reversibility: easy
+  blocks: "SF-06 prevention of unexpected start; interaction IX-05"
+  gate: G1
+  asked: 2026-10-28
+  proceed_after: 2026-11-11
+  batch: 3
+  options:
+    - key: A
+      recommended: true
+      title: "Remote services may only stop; reset and start need the local gamepad"
+      detail: "Removes the remote way to make the robot move. Cost: no remote start for demos or scripts."
+    - key: B
+      title: "Keep remote reset and start once commands are authenticated"
+      detail: "Convenient. Cost: depends on network security that does not exist yet (SF-08)."
+    - key: C
+      title: "Keep as today"
+      detail: "No change. Cost: anyone on the network can start the robot."
+  sources: ["assurance/02-concept/WP-C-03-integrated-hazard-analysis.md HE-06.1, HE-06.2, IX-05", "assurance/00-assessment/gap-assessment.md F-10"]
+  status: open
+
+- id: DQ-020
+  question: "Should the robot show plainly when its motors are enabled?"
+  context: >-
+    Only the log says whether the motors are enabled. Someone who thinks the robot is off can put a hand in a knee
+    joint that can still move with 120 N·m. A lamp and a sound on the robot are the usual remedy.
+  reversibility: easy
+  blocks: "SF-10 enabled-state indication"
+  gate: G1
+  asked: 2026-10-28
+  proceed_after: 2026-11-11
+  batch: 3
+  options:
+    - key: A
+      recommended: true
+      title: "A lamp on the robot, lit while enabled, and a short sound on enable"
+      detail: "Visible from across the cell. Cost: a small part and its wiring."
+    - key: B
+      title: "Gamepad rumble and a log message only"
+      detail: "No hardware. Cost: only the operator knows; workers nearby do not."
+  sources: ["assurance/02-concept/WP-C-03-integrated-hazard-analysis.md HE-10.1, SF-10"]
+  status: open
+
+- id: DQ-021
+  question: "What should we do about the battery's unknown protection?"
+  context: >-
+    The 720 Wh pack is a marketplace part. We do not know whether it has a battery management system that cuts out
+    on over-current, over-heating or over-charging. A pack without one can catch fire; the analysis rates it PL d.
+  reversibility: revisit
+  blocks: "AOU-03; HE-08.1; charging procedure"
+  gate: G1
+  asked: 2026-10-28
+  batch: 3
+  options:
+    - key: A
+      recommended: true
+      title: "Ask the supplier for the protection data; replace the pack if they cannot give it"
+      detail: "Keeps the current pack if it is documented. Cost: a few weeks of waiting, and a new pack if not."
+    - key: B
+      title: "Replace it now with a pack whose protection is documented"
+      detail: "Settles it at once. Cost: a new pack, and checking its fit and connector."
+    - key: C
+      title: "Keep it; charge only under supervision on a fire-safe surface"
+      detail: "No cost. Cost: the unknown stays in the safety case as a gap."
+  sources: ["assurance/02-concept/WP-C-01-item-definition.md AOU-03, IOI-03", "assurance/02-concept/WP-C-03-integrated-hazard-analysis.md HE-08.1"]
+  status: open
+
+- id: DQ-022
+  question: "Should we offer the safety fixes back to Roboparty?"
+  context: >-
+    The fixes (motor timeout, safe stop, input timeout, two-press disable, joint clamp) would help everyone who
+    builds this robot. Offering them is public and cannot be taken back, and they are not yet tested on a robot.
+  reversibility: hard
+  blocks: "Nothing in our plan; reduces our long-term merge work if accepted"
+  gate: G2
+  asked: 2026-10-28
+  batch: 3
+  options:
+    - key: A
+      recommended: true
+      title: "Offer them after the gantry tests pass"
+      detail: "We offer only what we have shown works. Cost: they wait a few weeks."
+    - key: B
+      title: "Offer them now as untested"
+      detail: "Earliest benefit to others. Cost: we publish safety changes we have not run on hardware."
+    - key: C
+      title: "Keep them in our fork"
+      detail: "No public step. Cost: we carry the difference against every upstream update."
+  sources: ["TomcoGame/roboto_safety#1", "DQ-002"]
   status: open
